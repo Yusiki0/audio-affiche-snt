@@ -3,94 +3,156 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lecteur Audio SNT</title>
+  <title>Lecteur Audio Interactif</title>
   <style>
-    body { background: #111; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-    .card { background: #1e1e1e; padding: 25px; border-radius: 20px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    
-    h2 { color: #fffc00; margin-bottom: 5px; }
-    .file-name { color: #888; font-size: 14px; margin-bottom: 20px; }
-
-    /* Barre de progression */
-    .progress-container { background: #444; height: 8px; border-radius: 4px; margin: 20px 0; cursor: pointer; position: relative; }
-    .progress-fill { background: #fffc00; height: 100%; width: 0%; border-radius: 4px; transition: width 0.1s linear; }
-
-    /* Boutons */
-    .btns { display: flex; justify-content: center; gap: 15px; }
-    button { 
-      background: #fffc00; border: none; padding: 12px 25px; 
-      border-radius: 50px; font-weight: bold; cursor: pointer; 
-      font-size: 16px; min-width: 100px;
+    :root {
+      --primary: #fffc00;
+      --bg: #111;
+      --card: #1e1e1e;
     }
-    button:active { transform: scale(0.95); }
 
-    #timer { font-size: 12px; color: #888; margin-top: 5px; display: flex; justify-content: space-between; }
-    #status { margin-top: 15px; font-size: 13px; color: #fffc00; min-height: 1.2em; }
+    body {
+      background: var(--bg);
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .player-card {
+      background: var(--card);
+      padding: 30px;
+      border-radius: 25px;
+      width: 320px;
+      text-align: center;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+    }
+
+    h2 { margin: 0 0 10px 0; font-size: 1.2rem; }
+    .file-info { color: #888; font-size: 0.8rem; margin-bottom: 25px; }
+
+    /* --- LA BARRE DE PROGRESSION (INPUT RANGE) --- */
+    .seek-bar {
+      width: 100%;
+      cursor: pointer;
+      accent-color: var(--primary); /* Couleur du bouton sur navigateurs modernes */
+      margin-bottom: 10px;
+    }
+
+    /* Styles pour personnaliser le curseur sur différents navigateurs */
+    input[type="range"] {
+      -webkit-appearance: none;
+      height: 6px;
+      background: #444;
+      border-radius: 5px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 18px;
+      width: 18px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 10px rgba(255, 252, 0, 0.5);
+      cursor: grab;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; }
+
+    .time-display {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-bottom: 25px;
+    }
+
+    /* --- BOUTONS --- */
+    .controls { display: flex; justify-content: center; gap: 15px; }
+    
+    .btn {
+      padding: 12px 25px;
+      border-radius: 50px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .btn-play { background: var(--primary); color: black; }
+    .btn-pause { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+    .btn:active { transform: scale(0.9); }
+
+    #status { margin-top: 20px; font-size: 12px; color: var(--primary); min-height: 1.2em; }
   </style>
 </head>
 <body>
 
-<div class="card">
-  <h2>🎧 Lecteur Audio</h2>
-  <div class="file-name">audio/son1.mp3</div>
+<div class="player-card">
+  <h2>🎧 Lecteur SNT</h2>
+  <div class="file-info">audio/son1.mp3</div>
 
-  <audio id="audio">
+  <audio id="audio" preload="metadata">
     <source src="audio/son1.mp3" type="audio/mpeg">
   </audio>
 
-  <div class="progress-container" onclick="seek(event)">
-    <div class="progress-fill" id="fill"></div>
-  </div>
-  <div id="timer">
-    <span id="current">0:00</span>
-    <span id="total">0:00</span>
-  </div>
-
-  <div class="btns">
-    <button onclick="play()">PLAY</button>
-    <button onclick="pause()" style="background:none; border:2px solid #fffc00; color:#fffc00;">PAUSE</button>
+  <input type="range" id="seek-bar" class="seek-bar" value="0" step="0.1">
+  
+  <div class="time-display">
+    <span id="current-time">0:00</span>
+    <span id="total-duration">0:00</span>
   </div>
 
-  <div id="status">En attente...</div>
+  <div class="controls">
+    <button class="btn btn-play" onclick="playAudio()">PLAY</button>
+    <button class="btn btn-pause" onclick="pauseAudio()">PAUSE</button>
+  </div>
+
+  <div id="status">Prêt</div>
 </div>
 
 <script>
   const audio = document.getElementById('audio');
-  const fill = document.getElementById('fill');
+  const seekBar = document.getElementById('seek-bar');
+  const currentTimeTxt = document.getElementById('current-time');
+  const totalDurationTxt = document.getElementById('total-duration');
   const status = document.getElementById('status');
-  const currentEl = document.getElementById('current');
-  const totalEl = document.getElementById('total');
 
-  // --- Fonctions de base ---
-  function play() {
+  // 1. Charger la durée quand le fichier est prêt
+  audio.onloadedmetadata = () => {
+    seekBar.max = audio.duration;
+    totalDurationTxt.innerText = formatTime(audio.duration);
+  };
+
+  // 2. Mettre à jour la barre pendant la lecture
+  audio.ontimeupdate = () => {
+    if (!audio.paused) { // On ne met à jour que si on ne fait pas glisser
+      seekBar.value = audio.currentTime;
+      currentTimeTxt.innerText = formatTime(audio.currentTime);
+    }
+  };
+
+  // 3. Déplacer le son quand on manipule la barre (glisser/cliquer)
+  seekBar.oninput = () => {
+    audio.currentTime = seekBar.value;
+    currentTimeTxt.innerText = formatTime(seekBar.value);
+  };
+
+  function playAudio() {
     audio.play().then(() => {
-      status.innerText = "▶ Lecture en cours";
-    }).catch(err => {
-      status.innerText = "⚠️ Erreur : " + err.message;
+      status.innerText = "Lecture en cours...";
+    }).catch(e => {
+      status.innerText = "Erreur : Cliquez à nouveau";
     });
   }
 
-  function pause() {
+  function pauseAudio() {
     audio.pause();
-    status.innerText = "⏸ Pause";
-  }
-
-  // --- Mise à jour barre et temps ---
-  audio.ontimeupdate = () => {
-    const pct = (audio.currentTime / audio.duration) * 100;
-    fill.style.width = pct + "%";
-    currentEl.innerText = formatTime(audio.currentTime);
-  };
-
-  audio.onloadedmetadata = () => {
-    totalEl.innerText = formatTime(audio.duration);
-    status.innerText = "Prêt à lire";
-  };
-
-  function seek(e) {
-    const width = e.currentTarget.clientWidth;
-    const clickX = e.offsetX;
-    audio.currentTime = (clickX / width) * audio.duration;
+    status.innerText = "Pause";
   }
 
   function formatTime(sec) {
@@ -99,10 +161,9 @@
     return m + ":" + (s < 10 ? "0" + s : s);
   }
 
-  // Si le fichier est introuvable
   audio.onerror = () => {
-    status.innerText = "❌ Fichier audio/son1.mp3 introuvable !";
-    status.style.color = "red";
+    status.innerText = "❌ Fichier audio/son1.mp3 absent !";
+    status.style.color = "#ff4444";
   };
 </script>
 
