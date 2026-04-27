@@ -2,110 +2,210 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>Lecteur SNT - son1.mp3</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lecteur Premium SNT</title>
   <style>
+    :root {
+      --primary: #fffc00; /* Jaune Snapchat/SNT */
+      --bg: #0f0f0f;
+      --card: #1a1a1a;
+      --text: #ffffff;
+    }
+
     body {
       margin: 0;
-      padding: 20px;
-      background: #111;
-      color: white;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .player-card {
+      width: 90%;
+      max-width: 380px;
+      background: var(--card);
+      padding: 30px;
+      border-radius: 30px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      border: 1px solid #333;
       text-align: center;
     }
 
-    .container {
-      max-width: 400px;
-      margin: 50px auto;
-      background: #1e1e1e;
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      border: 1px solid #333;
+    h2 {
+      margin: 0 0 5px 0;
+      font-size: 1.4rem;
+      letter-spacing: 1px;
     }
 
-    h2 { margin-top: 0; color: #fffc00; }
+    p {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 25px;
+    }
 
-    audio {
+    /* --- Barre de progression personnalisée --- */
+    .progress-container {
       width: 100%;
-      margin: 20px 0;
-      filter: invert(100%); /* Rend le lecteur natif plus visible sur fond sombre */
+      height: 6px;
+      background: #333;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      position: relative;
     }
 
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: var(--primary);
+      border-radius: 10px;
+      transition: width 0.1s linear;
+      box-shadow: 0 0 10px rgba(255, 252, 0, 0.4);
+    }
+
+    .time-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-bottom: 25px;
+    }
+
+    /* --- Boutons --- */
     .controls {
       display: flex;
       justify-content: center;
-      gap: 10px;
+      align-items: center;
+      gap: 20px;
     }
 
-    button {
-      background: #fffc00;
+    .btn {
       border: none;
-      padding: 15px 25px;
-      border-radius: 50px;
-      font-size: 16px;
-      font-weight: bold;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      transition: transform 0.2s, background 0.2s;
-      color: black;
+      transition: all 0.2s ease;
     }
 
-    button:active { transform: scale(0.95); }
-    button:hover { background: #e6e300; }
+    .btn-play {
+      width: 70px;
+      height: 70px;
+      background: var(--primary);
+      color: black;
+      font-size: 1.5rem;
+      box-shadow: 0 5px 15px rgba(255, 252, 0, 0.3);
+    }
+
+    .btn-play:active { transform: scale(0.9); }
 
     #status {
-      margin-top: 15px;
-      font-size: 0.9em;
-      color: #888;
+      margin-top: 20px;
+      font-size: 0.8rem;
+      color: var(--primary);
+      height: 1em;
     }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <h2>🎧 Lecteur Audio</h2>
-    
-    <p id="file-info">Fichier : <strong>audio/son1.mp3</strong></p>
+  <div class="player-card">
+    <h2>Lecture Audio</h2>
+    <p>son1.mp3</p>
 
-    <audio id="player" preload="auto">
+    <audio id="audio-player">
       <source src="audio/son1.mp3" type="audio/mpeg">
-      Votre navigateur ne supporte pas l'écoute.
     </audio>
 
-    <div class="controls">
-      <button onclick="playAudio()">▶️ PLAY</button>
-      <button onclick="pauseAudio()">⏸ PAUSE</button>
+    <div class="progress-container" id="progress-wrapper">
+      <div class="progress-bar" id="progress-fill"></div>
+    </div>
+    
+    <div class="time-info">
+      <span id="current-time">0:00</span>
+      <span id="duration">0:00</span>
     </div>
 
-    <div id="status">Prêt à la lecture</div>
+    <div class="controls">
+      <button class="btn btn-play" id="play-btn">▶</button>
+    </div>
+
+    <div id="status"></div>
   </div>
 
   <script>
-    const player = document.getElementById("player");
-    const statusDiv = document.getElementById("status");
+    const audio = document.getElementById('audio-player');
+    const playBtn = document.getElementById('play-btn');
+    const progressWrapper = document.getElementById('progress-wrapper');
+    const progressFill = document.getElementById('progress-fill');
+    const currentTimeEl = document.getElementById('current-time');
+    const durationEl = document.getElementById('duration');
+    const status = document.getElementById('status');
 
-    // Fonction pour lancer la musique proprement
-    async function playAudio() {
-      try {
-        statusDiv.innerText = "Chargement...";
-        await player.play();
-        statusDiv.innerText = "Lecture en cours...";
-      } catch (err) {
-        console.error("Erreur de lecture:", err);
-        statusDiv.innerText = "Erreur : " + err.message;
+    let isPlaying = false;
+
+    // Basculer entre Play et Pause
+    function togglePlay() {
+      if (isPlaying) {
+        audio.pause();
+        playBtn.innerHTML = "▶";
+      } else {
+        audio.play().catch(e => {
+          status.innerText = "Erreur : Cliquez à nouveau";
+        });
+        playBtn.innerHTML = "⏸";
       }
+      isPlaying = !isPlaying;
     }
 
-    // Fonction pour mettre en pause
-    function pauseAudio() {
-      player.pause();
-      statusDiv.innerText = "Pause";
+    playBtn.addEventListener('click', togglePlay);
+
+    // Mettre à jour la barre de progression
+    audio.addEventListener('timeupdate', () => {
+      const { duration, currentTime } = audio;
+      const progressPercent = (currentTime / duration) * 100;
+      progressFill.style.width = `${progressPercent}%`;
+
+      // Formatage du temps
+      currentTimeEl.innerText = formatTime(currentTime);
+    });
+
+    // Charger la durée totale dès que possible
+    audio.addEventListener('loadedmetadata', () => {
+      durationEl.innerText = formatTime(audio.duration);
+    });
+
+    // Permettre de cliquer sur la barre pour changer de moment
+    progressWrapper.addEventListener('click', (e) => {
+      const width = progressWrapper.clientWidth;
+      const clickX = e.offsetX;
+      const duration = audio.duration;
+      audio.currentTime = (clickX / width) * duration;
+    });
+
+    // Utitaire : Transformer secondes en 0:00
+    function formatTime(time) {
+      const min = Math.floor(time / 60);
+      const sec = Math.floor(time % 60);
+      return `${min}:${sec < 10 ? '0' + sec : sec}`;
     }
 
-    // Détection d'erreur si le fichier est introuvable (404)
-    player.addEventListener('error', function() {
-      statusDiv.innerText = "❌ ERREUR : Le fichier audio/son1.mp3 est introuvable !";
-      statusDiv.style.color = "#ff4444";
+    // Gestion d'erreur (404)
+    audio.addEventListener('error', () => {
+      status.innerText = "Fichier audio introuvable";
+      status.style.color = "red";
+    });
+
+    // Reset à la fin
+    audio.addEventListener('ended', () => {
+      isPlaying = false;
+      playBtn.innerHTML = "▶";
+      progressFill.style.width = '0%';
     });
   </script>
 
