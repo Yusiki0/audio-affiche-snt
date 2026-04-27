@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Lecteur MP3</title>
+</head>
+<body style="background:#111;color:white;text-align:center;margin-top:50px;">
+
+  <h2>🎧 Lecture audio</h2>
+  <p id="name"></p>
+
+  <audio id="player" controls></audio>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const file = params.get("file");
+
+    const player = document.getElementById("player");
+    const name = document.getElementById("name");
+
+    if (file) {
+      player.src = "audio/" + file;
+      name.textContent = file;
+    } else {
+      name.textContent = "Aucun fichier sélectionné";
+    }
+  </script>
+
+</body>
+</html>
