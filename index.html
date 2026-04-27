@@ -2,212 +2,109 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Lecteur Premium SNT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lecteur Audio SNT</title>
   <style>
-    :root {
-      --primary: #fffc00; /* Jaune Snapchat/SNT */
-      --bg: #0f0f0f;
-      --card: #1a1a1a;
-      --text: #ffffff;
-    }
+    body { background: #111; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+    .card { background: #1e1e1e; padding: 25px; border-radius: 20px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    
+    h2 { color: #fffc00; margin-bottom: 5px; }
+    .file-name { color: #888; font-size: 14px; margin-bottom: 20px; }
 
-    body {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
+    /* Barre de progression */
+    .progress-container { background: #444; height: 8px; border-radius: 4px; margin: 20px 0; cursor: pointer; position: relative; }
+    .progress-fill { background: #fffc00; height: 100%; width: 0%; border-radius: 4px; transition: width 0.1s linear; }
 
-    .player-card {
-      width: 90%;
-      max-width: 380px;
-      background: var(--card);
-      padding: 30px;
-      border-radius: 30px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-      border: 1px solid #333;
-      text-align: center;
+    /* Boutons */
+    .btns { display: flex; justify-content: center; gap: 15px; }
+    button { 
+      background: #fffc00; border: none; padding: 12px 25px; 
+      border-radius: 50px; font-weight: bold; cursor: pointer; 
+      font-size: 16px; min-width: 100px;
     }
+    button:active { transform: scale(0.95); }
 
-    h2 {
-      margin: 0 0 5px 0;
-      font-size: 1.4rem;
-      letter-spacing: 1px;
-    }
-
-    p {
-      color: #888;
-      font-size: 0.9rem;
-      margin-bottom: 25px;
-    }
-
-    /* --- Barre de progression personnalisée --- */
-    .progress-container {
-      width: 100%;
-      height: 6px;
-      background: #333;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      position: relative;
-    }
-
-    .progress-bar {
-      width: 0%;
-      height: 100%;
-      background: var(--primary);
-      border-radius: 10px;
-      transition: width 0.1s linear;
-      box-shadow: 0 0 10px rgba(255, 252, 0, 0.4);
-    }
-
-    .time-info {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.75rem;
-      color: #aaa;
-      margin-bottom: 25px;
-    }
-
-    /* --- Boutons --- */
-    .controls {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 20px;
-    }
-
-    .btn {
-      border: none;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .btn-play {
-      width: 70px;
-      height: 70px;
-      background: var(--primary);
-      color: black;
-      font-size: 1.5rem;
-      box-shadow: 0 5px 15px rgba(255, 252, 0, 0.3);
-    }
-
-    .btn-play:active { transform: scale(0.9); }
-
-    #status {
-      margin-top: 20px;
-      font-size: 0.8rem;
-      color: var(--primary);
-      height: 1em;
-    }
+    #timer { font-size: 12px; color: #888; margin-top: 5px; display: flex; justify-content: space-between; }
+    #status { margin-top: 15px; font-size: 13px; color: #fffc00; min-height: 1.2em; }
   </style>
 </head>
 <body>
 
-  <div class="player-card">
-    <h2>Lecture Audio</h2>
-    <p>son1.mp3</p>
+<div class="card">
+  <h2>🎧 Lecteur Audio</h2>
+  <div class="file-name">audio/son1.mp3</div>
 
-    <audio id="audio-player">
-      <source src="audio/son1.mp3" type="audio/mpeg">
-    </audio>
+  <audio id="audio">
+    <source src="audio/son1.mp3" type="audio/mpeg">
+  </audio>
 
-    <div class="progress-container" id="progress-wrapper">
-      <div class="progress-bar" id="progress-fill"></div>
-    </div>
-    
-    <div class="time-info">
-      <span id="current-time">0:00</span>
-      <span id="duration">0:00</span>
-    </div>
-
-    <div class="controls">
-      <button class="btn btn-play" id="play-btn">▶</button>
-    </div>
-
-    <div id="status"></div>
+  <div class="progress-container" onclick="seek(event)">
+    <div class="progress-fill" id="fill"></div>
+  </div>
+  <div id="timer">
+    <span id="current">0:00</span>
+    <span id="total">0:00</span>
   </div>
 
-  <script>
-    const audio = document.getElementById('audio-player');
-    const playBtn = document.getElementById('play-btn');
-    const progressWrapper = document.getElementById('progress-wrapper');
-    const progressFill = document.getElementById('progress-fill');
-    const currentTimeEl = document.getElementById('current-time');
-    const durationEl = document.getElementById('duration');
-    const status = document.getElementById('status');
+  <div class="btns">
+    <button onclick="play()">PLAY</button>
+    <button onclick="pause()" style="background:none; border:2px solid #fffc00; color:#fffc00;">PAUSE</button>
+  </div>
 
-    let isPlaying = false;
+  <div id="status">En attente...</div>
+</div>
 
-    // Basculer entre Play et Pause
-    function togglePlay() {
-      if (isPlaying) {
-        audio.pause();
-        playBtn.innerHTML = "▶";
-      } else {
-        audio.play().catch(e => {
-          status.innerText = "Erreur : Cliquez à nouveau";
-        });
-        playBtn.innerHTML = "⏸";
-      }
-      isPlaying = !isPlaying;
-    }
+<script>
+  const audio = document.getElementById('audio');
+  const fill = document.getElementById('fill');
+  const status = document.getElementById('status');
+  const currentEl = document.getElementById('current');
+  const totalEl = document.getElementById('total');
 
-    playBtn.addEventListener('click', togglePlay);
-
-    // Mettre à jour la barre de progression
-    audio.addEventListener('timeupdate', () => {
-      const { duration, currentTime } = audio;
-      const progressPercent = (currentTime / duration) * 100;
-      progressFill.style.width = `${progressPercent}%`;
-
-      // Formatage du temps
-      currentTimeEl.innerText = formatTime(currentTime);
+  // --- Fonctions de base ---
+  function play() {
+    audio.play().then(() => {
+      status.innerText = "▶ Lecture en cours";
+    }).catch(err => {
+      status.innerText = "⚠️ Erreur : " + err.message;
     });
+  }
 
-    // Charger la durée totale dès que possible
-    audio.addEventListener('loadedmetadata', () => {
-      durationEl.innerText = formatTime(audio.duration);
-    });
+  function pause() {
+    audio.pause();
+    status.innerText = "⏸ Pause";
+  }
 
-    // Permettre de cliquer sur la barre pour changer de moment
-    progressWrapper.addEventListener('click', (e) => {
-      const width = progressWrapper.clientWidth;
-      const clickX = e.offsetX;
-      const duration = audio.duration;
-      audio.currentTime = (clickX / width) * duration;
-    });
+  // --- Mise à jour barre et temps ---
+  audio.ontimeupdate = () => {
+    const pct = (audio.currentTime / audio.duration) * 100;
+    fill.style.width = pct + "%";
+    currentEl.innerText = formatTime(audio.currentTime);
+  };
 
-    // Utitaire : Transformer secondes en 0:00
-    function formatTime(time) {
-      const min = Math.floor(time / 60);
-      const sec = Math.floor(time % 60);
-      return `${min}:${sec < 10 ? '0' + sec : sec}`;
-    }
+  audio.onloadedmetadata = () => {
+    totalEl.innerText = formatTime(audio.duration);
+    status.innerText = "Prêt à lire";
+  };
 
-    // Gestion d'erreur (404)
-    audio.addEventListener('error', () => {
-      status.innerText = "Fichier audio introuvable";
-      status.style.color = "red";
-    });
+  function seek(e) {
+    const width = e.currentTarget.clientWidth;
+    const clickX = e.offsetX;
+    audio.currentTime = (clickX / width) * audio.duration;
+  }
 
-    // Reset à la fin
-    audio.addEventListener('ended', () => {
-      isPlaying = false;
-      playBtn.innerHTML = "▶";
-      progressFill.style.width = '0%';
-    });
-  </script>
+  function formatTime(sec) {
+    let m = Math.floor(sec / 60);
+    let s = Math.floor(sec % 60);
+    return m + ":" + (s < 10 ? "0" + s : s);
+  }
+
+  // Si le fichier est introuvable
+  audio.onerror = () => {
+    status.innerText = "❌ Fichier audio/son1.mp3 introuvable !";
+    status.style.color = "red";
+  };
+</script>
 
 </body>
 </html>
