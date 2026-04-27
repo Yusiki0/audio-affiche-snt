@@ -3,68 +3,110 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>Lecteur MP3</title>
+  <title>Lecteur SNT - son1.mp3</title>
   <style>
-    body { margin: 0; padding: 20px; background: #111; color: white; font-family: Arial, sans-serif; text-align: center; }
-    .container { max-width: 500px; margin: auto; background: #1e1e1e; padding: 20px; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-    h2 { margin-bottom: 20px; }
-    audio { width: 100%; height: 40px; margin-bottom: 10px; }
-    .controls { margin-top: 15px; }
-    button { background: #fffc00; border: none; padding: 12px 20px; margin: 5px; border-radius: 8px; font-size: 16px; cursor: pointer; color: black; font-weight: bold; }
-    button:hover { opacity: 0.8; }
-    #status { font-size: 12px; color: #888; margin-top: 10px; }
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #111;
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 400px;
+      margin: 50px auto;
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid #333;
+    }
+
+    h2 { margin-top: 0; color: #fffc00; }
+
+    audio {
+      width: 100%;
+      margin: 20px 0;
+      filter: invert(100%); /* Rend le lecteur natif plus visible sur fond sombre */
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    button {
+      background: #fffc00;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.2s;
+      color: black;
+    }
+
+    button:active { transform: scale(0.95); }
+    button:hover { background: #e6e300; }
+
+    #status {
+      margin-top: 15px;
+      font-size: 0.9em;
+      color: #888;
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <h2>🎧 Lecture audio</h2>
+    <h2>🎧 Lecteur Audio</h2>
+    
+    <p id="file-info">Fichier : <strong>audio/son1.mp3</strong></p>
 
-    <audio id="player" controls>
-      Ton navigateur ne supporte pas l'audio.
+    <audio id="player" preload="auto">
+      <source src="audio/son1.mp3" type="audio/mpeg">
+      Votre navigateur ne supporte pas l'écoute.
     </audio>
 
     <div class="controls">
-      <button onclick="playAudio()">▶️ Play</button>
-      <button onclick="pauseAudio()">⏸ Pause</button>
+      <button onclick="playAudio()">▶️ PLAY</button>
+      <button onclick="pauseAudio()">⏸ PAUSE</button>
     </div>
-    
-    <div id="status">Chargement...</div>
+
+    <div id="status">Prêt à la lecture</div>
   </div>
 
   <script>
     const player = document.getElementById("player");
     const statusDiv = document.getElementById("status");
 
-    // 1. Récupérer le nom du fichier dans l'URL (ex: ?file=son1.mp3)
-    const urlParams = new URLSearchParams(window.location.search);
-    const fileName = urlParams.get('file') || 'son1.mp3'; // 'son1.mp3' par défaut
-
-    // 2. Construire le chemin vers le dossier /audio
-    // Si ton dossier "audio" est à la racine de ton site :
-    player.src = "audio/" + fileName;
-
-    // 3. Fonctions de lecture sécurisées
+    // Fonction pour lancer la musique proprement
     async function playAudio() {
       try {
-        statusDiv.innerText = "Lecture en cours...";
+        statusDiv.innerText = "Chargement...";
         await player.play();
+        statusDiv.innerText = "Lecture en cours...";
       } catch (err) {
-        console.log("Erreur de lecture : ", err);
-        statusDiv.innerText = "Erreur : Cliquez à nouveau sur Play";
+        console.error("Erreur de lecture:", err);
+        statusDiv.innerText = "Erreur : " + err.message;
       }
     }
 
+    // Fonction pour mettre en pause
     function pauseAudio() {
       player.pause();
       statusDiv.innerText = "Pause";
     }
 
-    // Vérifier si le fichier charge bien
-    player.onerror = () => {
-      statusDiv.innerText = "Erreur : Fichier " + fileName + " introuvable dans /audio";
-      statusDiv.style.color = "red";
-    };
+    // Détection d'erreur si le fichier est introuvable (404)
+    player.addEventListener('error', function() {
+      statusDiv.innerText = "❌ ERREUR : Le fichier audio/son1.mp3 est introuvable !";
+      statusDiv.style.color = "#ff4444";
+    });
   </script>
 
 </body>
